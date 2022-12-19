@@ -5,11 +5,12 @@ import (
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"math/rand"
 	"time"
 )
 
-//A utiliser pour décoder le json par le sub aussi
-//Contient les différents champs à récupérer
+// A utiliser pour décoder le json par le sub aussi
+// Contient les différents champs à récupérer
 type captorDatas struct {
 	IdCompteur   int     //id du capteur
 	IdAeroport   string  //id aéroport (code "IATA" 3 caractères)
@@ -18,7 +19,7 @@ type captorDatas struct {
 	DateHeureMes string  //Date et heure de la mesure (timestamp : YYYY-MM-DD-hh-mm-ss)
 }
 
-//Créer client
+// Créer client
 func createClientOptions(brokerUrl string, clientId string) *mqtt.ClientOptions {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(brokerUrl)
@@ -26,7 +27,7 @@ func createClientOptions(brokerUrl string, clientId string) *mqtt.ClientOptions 
 	return opts
 }
 
-//Connection au broker
+// Connection au broker
 func connect(brokerURI string, clientId string) mqtt.Client {
 	fmt.Println("Trying to connect (" + brokerURI + ", " + clientId + ")...")
 	opts := createClientOptions(brokerURI, clientId)
@@ -40,7 +41,7 @@ func connect(brokerURI string, clientId string) mqtt.Client {
 	return client
 }
 
-//fonction random
+// fonction random
 func generateDatas(codeAeroport string) captorDatas {
 	t := time.Now()
 	var data = captorDatas{
@@ -49,16 +50,16 @@ func generateDatas(codeAeroport string) captorDatas {
 		NatureMesure: "Temperature",
 		DateHeureMes: t.Format("2006-01-02-15-04-05"),
 	}
-	data.Valeur = randomTemps(data.IdAeroport)
+	data.Valeur = randomTemps()
 	return data
 }
 
-//TODO
-func randomTemps(codeAer string) float32 {
-	return 1.1
+// TODO: à améliorer pour prendre en compte les anciennes valeurs de chaque airport pour pas trop faire varier les résultats
+func randomTemps() float32 {
+	return float32(rand.Intn(40))
 }
 
-//Fonction qui génère une string au format JSON à partir d'une structure captorDatas
+// Fonction qui génère une string au format JSON à partir d'une structure captorDatas
 func encodeJson(datas captorDatas) string {
 	empData := &datas
 	e, err := json.Marshal(empData)
@@ -69,13 +70,13 @@ func encodeJson(datas captorDatas) string {
 	return string(e)
 }
 
-//fonction main
+// fonction main
 func main() {
 
 	//var codesAeroport = []string{"CDG", "BOD", "CFE", "DIJ", "GNB", "JCA", "LRH", "NTE"}
 
 	//A modifier --> fonctionne en local
-	urlBroker := "tcp://localhost:1883"
+	urlBroker := "tcp://51.210.45.234:1883"
 	clientId2 := "clientVic_pub"
 
 	client_pub := connect(urlBroker, clientId2)
