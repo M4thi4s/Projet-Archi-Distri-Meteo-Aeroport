@@ -1,26 +1,35 @@
 package main
 
 import (
-	"context"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
-var collection *mongo.Collection
-var ctx = context.TODO()
-
-func main() {
-	clientOptions := options.Client().ApplyURI("mongodb+srv://mqttAirportSub:mqttAirportSub99@cluster0.vp9lmsa.mongodb.net/?retryWrites=true&w=majority")
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+func initService() {
+	initDbClient()
 }
 
-// Par aérport : Valeur Vente, Temp et pression, date, Id Capteur
+func main() {
+	fmt.Printf("Starting service\n")
+
+	initService()
+
+	sendtest := SensorMeasurement{
+		Captor:     2,
+		Airport:    "AAA",
+		Sensortype: Pressure,
+		Value:      1013.0,
+		Datetime:   primitive.NewDateTimeFromTime(time.Now()),
+	}
+	AddValue(sendtest)
+
+	var startTime = time.Now().Add(-time.Minute * 50)
+	var endTime = time.Now().Add(time.Minute * 10)
+
+	var res1 = GetMeasurementBetweenPeriod(Pressure, startTime, endTime)
+	fmt.Printf("Result 1: %v\n", res1)
+
+	var res2 = GetAverageSensorsMeasurement("AAA", time.Now())
+	fmt.Printf("Result 2: %v\n", res2)
+}
