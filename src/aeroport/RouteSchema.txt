@@ -1,3 +1,3 @@
-uriBroker/AirportCode/Sensors/Temp/IdCapteur
-uriBroker/AirportCode/Sensors/Wind/IdCapteur
-uriBroker/AirportCode/Sensors/Pressure/IdCapteur
+uriBroker/AirportCode/sensors/Temp/IdCapteur
+uriBroker/AirportCode/sensors/Wind/IdCapteur
+uriBroker/AirportCode/sensors/Pressure/IdCapteur

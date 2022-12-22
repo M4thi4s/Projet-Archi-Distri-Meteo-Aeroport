@@ -44,13 +44,13 @@ type SensorMeasurement struct {
 	Captor     int
 	Airport    string
 	Sensortype SensorType
-	Value      float32
+	Value      float64
 	Datetime   primitive.DateTime
 }
 
 type SensorAverageMeasurement struct {
 	Sensortype SensorType
-	Value      float32
+	Value      float64
 	Count      int
 }
 
@@ -140,7 +140,7 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 	}
 
 	for i := range averages {
-		averages[i].Value = averages[i].Value / float32(averages[i].Count)
+		averages[i].Value = averages[i].Value / float64(averages[i].Count)
 	}
 
 	return averages
