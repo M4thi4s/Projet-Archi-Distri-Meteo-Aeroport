@@ -1,6 +1,8 @@
 package main
 
 import (
+	db "aeroport/dbActions"
+	log "aeroport/logActions"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,10 +13,6 @@ import (
 	"syscall"
 	"time"
 )
-
-func initService() {
-	initDbClient()
-}
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
@@ -33,19 +31,6 @@ func main() {
 	signal.Notify(keepAlive, os.Interrupt, syscall.SIGTERM)
 
 	fmt.Printf("Starting service\n")
-
-	initService()
-	/*
-
-		var startTime = time.Now().Add(-time.Minute * 50)
-		var endTime = time.Now().Add(time.Minute * 10)
-
-		var res1 = GetMeasurementBetweenPeriod(Pressure, startTime, endTime)
-		fmt.Printf("Result 1: %v\n", res1)
-
-		var res2 = GetAverageSensorsMeasurement("AAA", time.Now())
-		fmt.Printf("Result 2: %v\n", res2)
-	*/
 
 	var broker = "51.210.45.234"
 	var port = 1883
@@ -76,19 +61,25 @@ func publish(client mqtt.Client) {
 	time.Sleep(time.Second)
 }
 
+func storeMeasure(d db.SensorMeasurement) {
+	fmt.Printf("Store measure\n")
+
+	fmt.Printf("Log : %t\n", log.WriteLog(d))
+}
+
 func onMessage(c mqtt.Client, msg mqtt.Message) {
 	topicDatas := strings.Split(msg.Topic(), "/")
 
-	sensortype := SensorType(0)
+	sensortype := db.SensorType(0)
 
 	if topicDatas[2] == "1" {
-		sensortype = TemperatureCel
+		sensortype = db.TemperatureCel
 	} else if topicDatas[2] == "2" {
-		sensortype = Atmospheric
+		sensortype = db.Atmospheric
 	} else if topicDatas[2] == "3" {
-		sensortype = Pressure
+		sensortype = db.Pressure
 	} else if topicDatas[2] == "4" {
-		sensortype = WindSpeed
+		sensortype = db.WindSpeed
 	} else {
 		fmt.Printf("Bad sensor type %s", topicDatas[1])
 		return
@@ -108,14 +99,16 @@ func onMessage(c mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	newMeasure := SensorMeasurement{
+	newMeasure := db.SensorMeasurement{
 		Captor:     captorId,
 		Airport:    topicDatas[0],
 		Sensortype: sensortype,
 		Value:      sensorVal,
 		Datetime:   primitive.NewDateTimeFromTime(time.Now()),
 	}
-	AddValue(newMeasure)
+
+	storeMeasure(newMeasure)
+
 }
 
 func sub(client mqtt.Client) {

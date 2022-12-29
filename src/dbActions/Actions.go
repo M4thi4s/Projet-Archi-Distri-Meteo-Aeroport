@@ -1,4 +1,4 @@
-package main
+package dbActions
 
 import (
 	"context"
@@ -16,7 +16,7 @@ var collection *mongo.Collection
 var ctx = context.TODO()
 
 // Connection to the database
-func initDbClient() {
+func InitDbClient() {
 	clientOptions := options.Client().ApplyURI("mongodb+srv://mqttAirportSub:mqttAirportSub99@cluster0.vp9lmsa.mongodb.net/?retryWrites=true&w=majority")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
@@ -93,6 +93,9 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 	startDate := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
 	endDate := time.Date(y, m, d, 23, 59, 59, 999, time.Local)
 
+	fmt.Println(startDate)
+	fmt.Println(endDate)
+
 	filter := bson.M{
 		"airport": airport,
 		"datetime": bson.M{
@@ -103,12 +106,16 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("Error 1: %v", err)
+		return []SensorAverageMeasurement{}
 	}
+
+	fmt.Printf("HELLO 1")
 
 	var results []SensorMeasurement
 	if err = cursor.All(ctx, &results); err != nil {
-		log.Fatal(err)
+		fmt.Printf("Error 2: %v", err)
+		return []SensorAverageMeasurement{}
 	}
 
 	var averages = []SensorAverageMeasurement{
@@ -140,8 +147,11 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 	}
 
 	for i := range averages {
-		averages[i].Value = averages[i].Value / float64(averages[i].Count)
+		if averages[i].Count > 0 {
+			averages[i].Value = averages[i].Value / float64(averages[i].Count)
+		}
 	}
+	fmt.Printf("HELLO 3")
 
 	return averages
 }
