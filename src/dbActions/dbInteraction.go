@@ -3,11 +3,13 @@ package dbActions
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"os"
 	"time"
 )
 
@@ -17,7 +19,12 @@ var ctx = context.TODO()
 
 // Connection to the database
 func InitDbClient() {
-	clientOptions := options.Client().ApplyURI("mongodb+srv://mqttAirportSub:mqttAirportSub99@cluster0.vp9lmsa.mongodb.net/?retryWrites=true&w=majority")
+	err := godotenv.Load("db.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	clientOptions := options.Client().ApplyURI(os.Getenv("db_url"))
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -34,10 +41,9 @@ func InitDbClient() {
 type SensorType int
 
 const (
-	TemperatureCel = 1
-	Atmospheric    = 2
-	Pressure       = 3
-	WindSpeed      = 4
+	TemperatureCel = 0
+	Pressure       = 1
+	WindSpeed      = 2
 )
 
 type SensorMeasurement struct {
@@ -121,11 +127,6 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 	var averages = []SensorAverageMeasurement{
 		SensorAverageMeasurement{
 			Sensortype: TemperatureCel,
-			Value:      0,
-			Count:      0,
-		},
-		SensorAverageMeasurement{
-			Sensortype: Atmospheric,
 			Value:      0,
 			Count:      0,
 		},

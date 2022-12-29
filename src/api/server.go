@@ -15,13 +15,11 @@ func initService() {
 func getBetweenDateTime(c *gin.Context) {
 	sensortype := db.SensorType(0)
 
-	if c.Query("sensor") == "1" {
+	if c.Query("sensor") == "0" {
 		sensortype = db.TemperatureCel
-	} else if c.Query("sensor") == "2" {
-		sensortype = db.Atmospheric
-	} else if c.Query("sensor") == "3" {
+	} else if c.Query("sensor") == "1" {
 		sensortype = db.Pressure
-	} else if c.Query("sensor") == "4" {
+	} else if c.Query("sensor") == "2" {
 		sensortype = db.WindSpeed
 	} else {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad sensor type"})

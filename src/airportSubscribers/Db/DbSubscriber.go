@@ -4,7 +4,9 @@ import (
 	db "aeroport/dbActions"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -36,25 +38,24 @@ func main() {
 	fmt.Printf("Starting service\n")
 
 	initService()
-	/*
 
-		var startTime = time.Now().Add(-time.Minute * 50)
-		var endTime = time.Now().Add(time.Minute * 10)
+	err := godotenv.Load("databaseClient.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
-		var res1 = GetMeasurementBetweenPeriod(Pressure, startTime, endTime)
-		fmt.Printf("Result 1: %v\n", res1)
+	var broker = os.Getenv("broker")
+	port, portErr := strconv.Atoi(os.Getenv("port"))
 
-		var res2 = GetAverageSensorsMeasurement("AAA", time.Now())
-		fmt.Printf("Result 2: %v\n", res2)
-	*/
+	if portErr != nil {
+		log.Fatalf("Error loading env port value")
+	}
 
-	var broker = "51.210.45.234"
-	var port = 1883
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
-	opts.SetClientID("DatabaseClient")
-	opts.SetUsername("DatabaseClient")
-	opts.SetPassword("DbPass123")
+	opts.SetClientID(os.Getenv("id"))
+	opts.SetUsername(os.Getenv("username"))
+	opts.SetPassword(os.Getenv("psw"))
 	opts.SetDefaultPublishHandler(messagePubHandler)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
@@ -64,17 +65,10 @@ func main() {
 	}
 
 	sub(client)
-	publish(client)
 
-	client.Disconnect(250)
 	<-keepAlive
-}
+	client.Disconnect(250)
 
-func publish(client mqtt.Client) {
-	text := fmt.Sprintf("9.85")
-	token := client.Publish("AIR/sensors/1/1234", 0, false, text)
-	token.Wait()
-	time.Sleep(time.Second)
 }
 
 func onMessage(c mqtt.Client, msg mqtt.Message) {
@@ -82,13 +76,11 @@ func onMessage(c mqtt.Client, msg mqtt.Message) {
 
 	sensortype := db.SensorType(0)
 
-	if topicDatas[2] == "1" {
+	if topicDatas[2] == "0" {
 		sensortype = db.TemperatureCel
-	} else if topicDatas[2] == "2" {
-		sensortype = db.Atmospheric
-	} else if topicDatas[2] == "3" {
+	} else if topicDatas[2] == "1" {
 		sensortype = db.Pressure
-	} else if topicDatas[2] == "4" {
+	} else if topicDatas[2] == "2" {
 		sensortype = db.WindSpeed
 	} else {
 		fmt.Printf("Bad sensor type %s", topicDatas[1])

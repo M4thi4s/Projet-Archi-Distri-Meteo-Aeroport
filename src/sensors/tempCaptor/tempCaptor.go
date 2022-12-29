@@ -1,95 +1,89 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/joho/godotenv"
 	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"time"
 )
 
-// A utiliser pour décoder le json par le sub aussi
-// Contient les différents champs à récupérer
-type captorDatas struct {
-	IdCompteur   int     //id du capteur
-	IdAeroport   string  //id aéroport (code "IATA" 3 caractères)
-	NatureMesure string  //Nature mesure ("Temperature","Atmospheric pressure", "Wind speed")
-	Valeur       float32 //Valeur de la mesure (numérique)
-	DateHeureMes string  //Date et heure de la mesure (timestamp : YYYY-MM-DD-hh-mm-ss)
+var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 }
 
-// Créer client
-func createClientOptions(brokerUrl string, clientId string) *mqtt.ClientOptions {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(brokerUrl)
-	opts.SetClientID(clientId)
-	return opts
+var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
+	fmt.Println("Connected")
 }
 
-// Connection au broker
-func connect(brokerURI string, clientId string) mqtt.Client {
-	fmt.Println("Trying to connect (" + brokerURI + ", " + clientId + ")...")
-	opts := createClientOptions(brokerURI, clientId)
-	client := mqtt.NewClient(opts)
-	token := client.Connect()
-	for !token.WaitTimeout(3 * time.Second) {
-	}
-	if err := token.Error(); err != nil {
-		log.Fatal(err)
-	}
-	return client
-}
-
-// fonction random
-func generateDatas(codeAeroport string) captorDatas {
-	t := time.Now()
-	var data = captorDatas{
-		IdCompteur:   1,
-		IdAeroport:   codeAeroport,
-		NatureMesure: "Temperature",
-		DateHeureMes: t.Format("2006-01-02-15-04-05"),
-	}
-	data.Valeur = randomTemps()
-	return data
-}
-
-// TODO: à améliorer pour prendre en compte les anciennes valeurs de chaque airport pour pas trop faire varier les résultats
-func randomTemps() float32 {
-	return float32(rand.Intn(40))
-}
-
-// Fonction qui génère une string au format JSON à partir d'une structure captorDatas
-func encodeJson(datas captorDatas) string {
-	empData := &datas
-	e, err := json.Marshal(empData)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	return string(e)
+var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
+	fmt.Printf("Connect lost: %v", err)
 }
 
 // fonction main
 func main() {
-
-	//var codesAeroport = []string{"CDG", "BOD", "CFE", "DIJ", "GNB", "JCA", "LRH", "NTE"}
-
-	//A modifier --> fonctionne en local
-	urlBroker := "tcp://51.210.45.234:1883"
-	clientId2 := "clientVic_pub"
-
-	client_pub := connect(urlBroker, clientId2)
-
-	for {
-		data := generateDatas("CDG") //CDG à modif dans config réelle
-		jsonDatas := encodeJson(data)
-
-		client_pub.Publish("test", 0, false, jsonDatas) //topic à changer
-		time.Sleep(10 * time.Second)
-		if !client_pub.IsConnected() {
-			break
-		}
+	err := godotenv.Load("tempSensor.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
 	}
 
+	var broker = os.Getenv("broker")
+	port, portErr := strconv.Atoi(os.Getenv("port"))
+
+	if portErr != nil {
+		log.Fatalf("Error loading env port value")
+	}
+
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	opts.SetClientID(os.Getenv("id"))
+	opts.SetUsername(os.Getenv("username"))
+	opts.SetPassword(os.Getenv("psw"))
+	opts.SetDefaultPublishHandler(messagePubHandler)
+	opts.OnConnect = connectHandler
+	opts.OnConnectionLost = connectLostHandler
+	client := mqtt.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+
+	repeatePublish(client)
+
+	client.Disconnect(250)
+}
+
+func repeatePublish(client mqtt.Client) {
+	publish(client)
+	time.Sleep(10 * time.Second)
+	repeatePublish(client)
+}
+
+func publish(client mqtt.Client) {
+	var codesAeroport = []string{"CDG", "BOD"}
+
+	randomCode := codesAeroport[rand.Intn(len(codesAeroport))]
+
+	sensorType := 0
+	sensorId := rand.Intn(2)
+
+	float := rand.Float32()*100 - 50
+
+	floatAsString := strconv.FormatFloat(float64(float), 'f', 2, 32)
+
+	fmt.Printf("Publishing message: %s to topic: %s\n", floatAsString, randomCode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId))
+
+	qos := byte(0)
+
+	if os.Getenv("qos") == "1" {
+		qos = byte(1)
+	} else if os.Getenv("qos") == "2" {
+		qos = byte(2)
+	}
+
+	token := client.Publish(randomCode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId), qos, false, floatAsString)
+	token.Wait()
+	time.Sleep(time.Second)
 }
