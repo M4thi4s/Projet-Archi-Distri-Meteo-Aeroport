@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -15,11 +16,11 @@ func initService() {
 func getBetweenDateTime(c *gin.Context) {
 	sensortype := db.SensorType(0)
 
-	if c.Query("sensor") == "0" {
+	if c.Param("sensor") == "0" {
 		sensortype = db.TemperatureCel
-	} else if c.Query("sensor") == "1" {
+	} else if c.Param("sensor") == "1" {
 		sensortype = db.Pressure
-	} else if c.Query("sensor") == "2" {
+	} else if c.Param("sensor") == "2" {
 		sensortype = db.WindSpeed
 	} else {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad sensor type"})
@@ -35,6 +36,7 @@ func getBetweenDateTime(c *gin.Context) {
 
 	res := db.GetMeasurementBetweenPeriod(
 		sensortype,
+		c.Param("airport"),
 		d,
 		f,
 	)
@@ -61,7 +63,15 @@ func getAverageForDay(c *gin.Context) {
 }
 
 func getDoc(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, []string{"Route 1 : GetBetweenDateTime?sensor=N&from=YYYY-MM-DDThh:mm:ss&to=YYYY-MM-DDThh:mm:ss", "Route 2 : GetAverageForDay?date=YYYY-MM-DD&airport=XXX"})
+	jsonFile, err := os.ReadFile("api/openapi.json")
+	if err != nil {
+		fmt.Println("File reading error", err)
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Unable to find open API file"})
+		return
+	} else {
+		c.Header("Content-Disposition", "attachment; filename=openAPI.json")
+		c.Data(http.StatusOK, "application/octet-stream", jsonFile)
+	}
 }
 
 func main() {
@@ -69,7 +79,7 @@ func main() {
 
 	router := gin.Default()
 
-	router.GET("/GetBetweenDateTime", getBetweenDateTime)
+	router.GET("/GetBetweenDateTime/:airport/:sensor", getBetweenDateTime)
 	router.GET("/GetAverageForDay/:airport/:date", getAverageForDay)
 	router.GET("/", getDoc)
 
