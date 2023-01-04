@@ -63,13 +63,13 @@ func getAverageForDay(c *gin.Context) {
 }
 
 func getDoc(c *gin.Context) {
-	jsonFile, err := os.ReadFile("api/openapi.json")
+	jsonFile, err := os.ReadFile("api/openapi.yaml")
 	if err != nil {
 		fmt.Println("File reading error", err)
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Unable to find open API file"})
 		return
 	} else {
-		c.Header("Content-Disposition", "attachment; filename=openAPI.json")
+		c.Header("Content-Disposition", "attachment; filename=openAPI.yaml")
 		c.Data(http.StatusOK, "application/octet-stream", jsonFile)
 	}
 }
