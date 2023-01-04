@@ -1,0 +1,160 @@
+---
+openapi: 3.0.0
+info:
+  title: Airport API
+  description: This is the API of the airport GoLang project
+  version: 1.0.0
+tags:
+  - name: sensors
+    description: Operations in link with airport sensors
+paths:
+  /:
+    get:
+      tags:
+        - sensors
+      summary: home page of the service
+      description: |
+        Nothing to do
+      operationId: home
+      responses:
+        "200":
+          description: welcome message
+          content:
+            text/html:
+              schema:
+                type: string
+                example: <h1>Test</h1>
+  /getBetweenDateTime/{airport}:
+    get:
+      tags:
+        - sensors
+      summary: get sensors mesurements for an airport between two dates
+      description: |
+        get sensors mesurements for an airport between two dates
+      parameters:
+        - name: airport
+          in: path
+          description: Airport id (ex => CDG)
+          required: true
+          style: simple
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: string
+        - name: from
+          in: query
+          description: datetime from (ex => YYYY-MM-DD-hh:mm)
+          required: true
+          style: form
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: string
+        - name: to
+          in: query
+          description: datetime to (ex => YYYY-MM-DD-hh:mm)
+          required: true
+          style: form
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    Captor:
+                      type: integer
+                      description: captor id
+                    Airport:
+                      type: string
+                      description: airport id
+                    Sensortype:
+                      type: integer
+                      description: type of the sensor
+                    Value:
+                      type: number
+                      description: value at the datetime
+                    Datetime:
+                      type: string
+                      description: datetime of the mesure
+                  example:
+                    - Captor: 0
+                      Airport: "CDG"
+                      Sensortype: 1
+                      Value: 25.58
+                      Datetime: "2022-12-29T19:05:11.225+01:00"
+                    - Captor: 0
+                      Airport: "CDG"
+                      Sensortype: 1
+                      Value: 23.12
+                      Datetime: "2022-12-29T19:05:55.662+01:00"
+        "400":
+          description: "bad parameter"
+  /getAverageForDay/{airport}/{date}:
+    get:
+      tags:
+        - sensors
+      summary: get average sensor mesurements for a date
+      description: |
+        By passing in an appropriate options, you can get the average sensors mesurements for an airport.
+      parameters:
+        - name: date
+          in: path
+          description: Date => AAAA-MM-DD
+          required: true
+          style: simple
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: string
+        - name: airport
+          in: path
+          description: Airport id (ex => CDG)
+          required: true
+          style: simple
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    Sensortype:
+                      type: integer
+                      description: type of the sensor
+                    Value:
+                      type: number
+                      description: average value
+                    Count:
+                      type: integer
+                      description: numbers of values for the day
+                  example:
+                    - Sensortype: 0
+                      Value: 1.8707142857142862
+                      Count: 42
+                    - Sensortype: 1
+                      Value: 1.6504545454545463
+                      Count: 44
+                    - Sensortype: 2
+                      Value: -2.134824722194022
+                      Count: 43
+        "400":
+          description: bad input parameter
+
