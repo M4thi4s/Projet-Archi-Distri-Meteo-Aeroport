@@ -3,6 +3,7 @@ package main
 import (
 	db "aeroport/dbActions"
 	"aeroport/logActions"
+	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
@@ -95,10 +96,26 @@ func onMessage(c mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	sensorVal, errValue := strconv.ParseFloat(string(msg.Payload()), 64)
+	var msgJson map[string]string
+
+	errUnmarshall := json.Unmarshal(msg.Payload(), &msgJson)
+
+	if errUnmarshall != nil {
+		fmt.Printf("Unmarshall err : %s", errUnmarshall)
+		return
+	}
+
+	sensorVal, errValue := strconv.ParseFloat(msgJson["Value"], 64)
 
 	if errValue != nil {
 		fmt.Printf("value err : %s", errValue)
+		return
+	}
+
+	date, parseDateErr := time.Parse(time.RFC3339, msgJson["Date"])
+
+	if parseDateErr != nil {
+		fmt.Printf("Date err : %s", parseDateErr)
 		return
 	}
 
@@ -107,7 +124,7 @@ func onMessage(c mqtt.Client, msg mqtt.Message) {
 		Airport:    topicDatas[0],
 		Sensortype: sensortype,
 		Value:      sensorVal,
-		Datetime:   primitive.NewDateTimeFromTime(time.Now()),
+		Datetime:   primitive.NewDateTimeFromTime(date),
 	}
 
 	storeMeasure(newMeasure)

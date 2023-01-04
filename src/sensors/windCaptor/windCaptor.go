@@ -106,7 +106,7 @@ func publish(client mqtt.Client, airportcode string) {
 		qos = byte(2)
 	}
 
-	var jsonData = saveValuesInJSON(time.Now().String(), floatAsString)
+	var jsonData = saveValuesInJSON(time.Now().Format(time.RFC3339), floatAsString)
 
 	token := client.Publish(airportcode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId), qos, false, jsonData)
 	token.Wait()
