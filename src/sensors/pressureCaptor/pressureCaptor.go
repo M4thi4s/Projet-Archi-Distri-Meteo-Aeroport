@@ -24,7 +24,7 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	fmt.Printf("Connect lost: %v", err)
 }
 
-var mapValue = map[string]int{"CDG": 1010, "BOD": 1020}
+var mapValue = map[string]float32{"CDG": 1010, "BOD": 1020}
 
 // fonction main
 func main() {
@@ -65,9 +65,25 @@ func repeatePublish(client mqtt.Client) {
 	repeatePublish(client)
 }
 
-func RandInt(lower, upper int) int {
-	rng := upper - lower
-	return rand.Intn(rng) + lower
+func randomNumber(min float32, max float32) float32 {
+	// Initialisation de la source de nombres aléatoires
+	rand.Seed(time.Now().UnixNano())
+
+	// Génération d'un nombre aléatoire compris entre min et max
+	return min + rand.Float32()*(max-min)
+}
+
+func limitedRandomNumber(oldNumber float32) float32 {
+	number := oldNumber + randomNumber(-1, 1)
+
+	// Vérification des limites
+	if number < 1007 {
+		number = 1007
+	} else if number > 1040 {
+		number = 1040
+	}
+
+	return number
 }
 
 func saveValuesInJSON(value1 string, value2 string) []byte {
@@ -94,7 +110,7 @@ func publish(client mqtt.Client, airportcode string) {
 
 	floatAsString := strconv.FormatFloat(float64(mapValue[airportcode]), 'f', 2, 32)
 
-	mapValue[airportcode] = mapValue[airportcode] + RandInt(-2, 2)
+	mapValue[airportcode] = limitedRandomNumber(mapValue[airportcode])
 
 	fmt.Printf("Publishing message: %s to topic: %s\n", floatAsString, airportcode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId))
 
