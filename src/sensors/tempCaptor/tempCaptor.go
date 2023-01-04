@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
@@ -22,6 +23,8 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
 	fmt.Printf("Connect lost: %v", err)
 }
+
+var mapValue = map[string]float32{"CDG": 20.3, "BOD": 24.7}
 
 // fonction main
 func main() {
@@ -56,24 +59,47 @@ func main() {
 }
 
 func repeatePublish(client mqtt.Client) {
-	publish(client)
+	publish(client, "CDG")
+	publish(client, "BOD")
 	time.Sleep(10 * time.Second)
 	repeatePublish(client)
 }
 
-func publish(client mqtt.Client) {
-	var codesAeroport = []string{"CDG", "BOD"}
+func randomNumber() float32 {
+	// Initialisation de la source de nombres aléatoires
+	rand.Seed(time.Now().UnixNano())
 
-	randomCode := codesAeroport[rand.Intn(len(codesAeroport))]
+	// Génération d'un nombre aléatoire compris entre -0.3 et 0.3
+	return rand.Float32()*0.3 - 0.3
+}
+
+func saveValuesInJSON(value1 string, value2 string) []byte {
+	// Création d'un objet map
+	data := make(map[string]string)
+
+	// Ajout des valeurs à l'objet map
+	data["Date"] = value1
+	data["Value"] = value2
+
+	// Conversion de l'objet map en JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return jsonData
+}
+
+func publish(client mqtt.Client, airportcode string) {
 
 	sensorType := 0
 	sensorId := rand.Intn(2)
 
-	float := rand.Float32()*100 - 50
+	floatAsString := strconv.FormatFloat(float64(mapValue[airportcode]), 'f', 2, 32)
 
-	floatAsString := strconv.FormatFloat(float64(float), 'f', 2, 32)
+	mapValue[airportcode] = mapValue[airportcode] + randomNumber()
 
-	fmt.Printf("Publishing message: %s to topic: %s\n", floatAsString, randomCode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId))
+	fmt.Printf("Publishing message: %s to topic: %s\n", floatAsString, airportcode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId))
 
 	qos := byte(0)
 
@@ -83,7 +109,9 @@ func publish(client mqtt.Client) {
 		qos = byte(2)
 	}
 
-	token := client.Publish(randomCode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId), qos, false, floatAsString)
+	var jsonData = saveValuesInJSON(time.Now().Format(time.RFC3339), floatAsString)
+
+	token := client.Publish(airportcode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId), qos, false, jsonData)
 	token.Wait()
 	time.Sleep(time.Second)
 }

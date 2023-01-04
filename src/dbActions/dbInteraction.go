@@ -71,7 +71,7 @@ func AddValue(measure SensorMeasurement) {
 	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
 }
 
-func GetMeasurementBetweenPeriod(sensorType SensorType, start time.Time, end time.Time) []SensorMeasurement {
+func GetMeasurementBetweenPeriod(sensorType SensorType, airport string, start time.Time, end time.Time) []SensorMeasurement {
 	fmt.Printf("Start: %v\n", primitive.NewDateTimeFromTime(start))
 	filter := bson.M{
 		"sensortype": sensorType,
@@ -79,6 +79,7 @@ func GetMeasurementBetweenPeriod(sensorType SensorType, start time.Time, end tim
 			"$gte": primitive.NewDateTimeFromTime(start),
 			"$lte": primitive.NewDateTimeFromTime(end),
 		},
+		"airport": airport,
 	}
 
 	cursor, err := collection.Find(ctx, filter)

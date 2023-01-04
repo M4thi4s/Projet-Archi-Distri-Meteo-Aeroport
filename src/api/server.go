@@ -44,7 +44,7 @@ func getBetweenDateTime(c *gin.Context) {
 
 func getAverageForDay(c *gin.Context) {
 	fmt.Println("GetAverageForDay")
-	d, err := time.Parse("2006-01-02", c.Query("date"))
+	d, err := time.Parse("2006-01-02", c.Param("date"))
 	if err != nil {
 		fmt.Printf("value err : %s\n", err)
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad date"})
@@ -53,7 +53,7 @@ func getAverageForDay(c *gin.Context) {
 	fmt.Println(d)
 
 	res := db.GetAverageSensorsMeasurement(
-		c.Query("airport"),
+		c.Param("airport"),
 		d,
 	)
 
@@ -70,7 +70,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/GetBetweenDateTime", getBetweenDateTime)
-	router.GET("/GetAverageForDay", getAverageForDay)
+	router.GET("/GetAverageForDay/:airport/:date", getAverageForDay)
 	router.GET("/", getDoc)
 
 	router.Run("localhost:8080")
