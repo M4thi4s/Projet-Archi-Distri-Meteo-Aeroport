@@ -2,15 +2,25 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Serveur WEB</title>
 </head>
 <body>
-    <h1>Hello World</h1>
+    <h1 style="text-align: center">Choix des paramètres</h1>
     <form action="measurement" method="post">
-        <input type="range" name="sensor" min="0" max="2">
+        <input type="radio" name="sensor" id="temp" value="0" checked>
+        <label for="temp">Temperature</label>
+
+        <input type="radio" name="sensor" id="pressure" value="1">
+        <label for="pressure">Pressure</label>
+
+        <input type="radio" name="sensor" id="wind" value="2">
+        <label for="wind">Wind</label>
+
         <select name="airport">
-            <option value="CDG">Paris Charles de Gaule</option>
-            <option value="BOD">Bordeaux</option>
+            {{range .}}
+            <option value="{{.}}">{{.}}</option>
+            {{end}}
+
         <input type="datetime-local" name="from">
         <input type="datetime-local" name="to">
         <input type="submit">
