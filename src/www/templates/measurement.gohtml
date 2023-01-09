@@ -24,18 +24,18 @@
         xAxis: {
             type: 'datetime',
             title: {
-                text: 'Date time'
+                text: 'Heure de la mesure'
             },
         },
         yAxis: {
             title: {
-                text: 'sensor'
+                text: '{{.Sensor}}'
             }
         },
         series: [{
             name: 'Measure',
             data: [
-                {{range $measure := .}}
+                {{range $measure := .measures}}
                 [new Date({{.Datetime}}).getTime(), {{.Value}}],
                 {{end}}
             ]

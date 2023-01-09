@@ -157,3 +157,16 @@ func GetAverageSensorsMeasurement(airport string, date time.Time) []SensorAverag
 
 	return averages
 }
+
+func GetAllAirports() []string {
+	cursor, err := collection.Distinct(ctx, "airport", bson.M{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stringSlice := make([]string, len(cursor))
+	for i, v := range cursor {
+		stringSlice[i] = v.(string)
+	}
+	return stringSlice
+}

@@ -65,12 +65,25 @@ func repeatePublish(client mqtt.Client) {
 	repeatePublish(client)
 }
 
-func randomNumber() float32 {
+func randomNumber(min float32, max float32) float32 {
 	// Initialisation de la source de nombres aléatoires
 	rand.Seed(time.Now().UnixNano())
 
-	// Génération d'un nombre aléatoire compris entre -0.3 et 0.3
-	return rand.Float32()*0.3 - 0.3
+	// Génération d'un nombre aléatoire compris entre min et max
+	return min + rand.Float32()*(max-min)
+}
+
+func limitedRandomNumber(oldNumber float32) float32 {
+	number := oldNumber + randomNumber(-0.2, 0.3)
+
+	// Vérification des limites
+	if number < -5 {
+		number = -5
+	} else if number > 44 {
+		number = 44
+	}
+
+	return number
 }
 
 func saveValuesInJSON(value1 string, value2 string) []byte {
@@ -97,7 +110,7 @@ func publish(client mqtt.Client, airportcode string) {
 
 	floatAsString := strconv.FormatFloat(float64(mapValue[airportcode]), 'f', 2, 32)
 
-	mapValue[airportcode] = mapValue[airportcode] + randomNumber()
+	mapValue[airportcode] = limitedRandomNumber(mapValue[airportcode])
 
 	fmt.Printf("Publishing message: %s to topic: %s\n", floatAsString, airportcode+"/sensors/"+strconv.Itoa(sensorType)+"/"+strconv.Itoa(sensorId))
 

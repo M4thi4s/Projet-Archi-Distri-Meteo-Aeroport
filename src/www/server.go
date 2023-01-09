@@ -27,7 +27,14 @@ func postParams(r *http.Request, name string) string {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "www/templates/index.gohtml")
+	tmpl, err := template.ParseFiles("www/templates/index.gohtml")
+	if err != nil {
+		log.Println("Bad template. " + err.Error())
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	err = tmpl.Execute(w, db.GetAllAirports())
 }
 
 func measurementBetweenHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +56,21 @@ func measurementBetweenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := db.GetMeasurementBetweenPeriod(sensorType, airport, dateDebut, dateFin)
+	measures := db.GetMeasurementBetweenPeriod(sensorType, airport, dateDebut, dateFin)
+
+	data := map[string]interface{}{
+		"measures": measures,
+	}
+
+	switch sensor {
+	case 0:
+		data["Sensor"] = "Temperature"
+	case 1:
+		data["Sensor"] = "Pressure"
+	case 2:
+		data["Sensor"] = "WindSpeed"
+	}
+
 	tmpl, err := template.ParseFiles("www/templates/measurement.gohtml")
 	if err != nil {
 		log.Println("Bad template. " + err.Error())
