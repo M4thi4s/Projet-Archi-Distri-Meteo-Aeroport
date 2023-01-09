@@ -1,5 +1,8 @@
 ---
 openapi: 3.0.0
+servers:
+  - url: "http://www.localhost:8080"
+    description: "Localhost"
 info:
   title: Airport API
   description: This is the API of the airport GoLang project
@@ -24,11 +27,11 @@ paths:
               schema:
                 type: string
                 example: <h1>Test</h1>
-  /getBetweenDateTime/{airport}:
+  /GetBetweenDateTime/{airport}/{sensortype}:
     get:
       tags:
         - sensors
-      summary: get sensors mesurements for an airport between two dates
+      summary: get sensors mesurements for an airport between two dates for a sensortype
       description: |
         get sensors mesurements for an airport between two dates
       parameters:
@@ -42,9 +45,19 @@ paths:
             maximum: 1
             minimum: 1
             type: string
+        - name: sensortype
+          in: path
+          description: sensortype id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            maximum: 1
+            minimum: 1
+            type: integer
         - name: from
           in: query
-          description: datetime from (ex => YYYY-MM-DD-hh:mm)
+          description: datetime from (ex => YYYY-MM-ddThh:mm --> 2023-12-01T22:01)
           required: true
           style: form
           explode: false
@@ -54,7 +67,7 @@ paths:
             type: string
         - name: to
           in: query
-          description: datetime to (ex => YYYY-MM-DD-hh:mm)
+          description: datetime to (ex => YYYY-MM-ddThh:mm --> 2023-12-01T22:01)
           required: true
           style: form
           explode: false
@@ -99,7 +112,7 @@ paths:
                       Datetime: "2022-12-29T19:05:55.662+01:00"
         "400":
           description: "bad parameter"
-  /getAverageForDay/{airport}/{date}:
+  /GetAverageForDay/{airport}/{date}:
     get:
       tags:
         - sensors
@@ -157,4 +170,3 @@ paths:
                       Count: 43
         "400":
           description: bad input parameter
-

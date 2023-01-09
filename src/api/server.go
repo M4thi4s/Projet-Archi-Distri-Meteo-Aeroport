@@ -23,6 +23,7 @@ func getBetweenDateTime(c *gin.Context) {
 	} else if c.Param("sensor") == "2" {
 		sensortype = db.WindSpeed
 	} else {
+		fmt.Println(c.Param("sensor"))
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Bad sensor type"})
 		return
 	}
@@ -34,6 +35,9 @@ func getBetweenDateTime(c *gin.Context) {
 		return
 	}
 
+	d = d.Add(time.Hour * -1)
+	f = f.Add(time.Hour * -1)
+
 	res := db.GetMeasurementBetweenPeriod(
 		sensortype,
 		c.Param("airport"),
@@ -41,6 +45,8 @@ func getBetweenDateTime(c *gin.Context) {
 		f,
 	)
 
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Credentials", "true")
 	c.IndentedJSON(http.StatusOK, res)
 }
 
@@ -59,6 +65,8 @@ func getAverageForDay(c *gin.Context) {
 		d,
 	)
 
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Credentials", "true")
 	c.IndentedJSON(http.StatusOK, res)
 }
 
