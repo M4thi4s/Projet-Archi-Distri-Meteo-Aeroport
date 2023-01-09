@@ -27,6 +27,8 @@ func getBetweenDateTime(c *gin.Context) {
 		return
 	}
 
+	//
+
 	d, err1 := time.Parse("2006-01-02T15:04", c.Query("from"))
 	f, err2 := time.Parse("2006-01-02T15:04", c.Query("to"))
 	if err1 != nil || err2 != nil {
